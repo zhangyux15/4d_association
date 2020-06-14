@@ -53,6 +53,8 @@ int main()
 	for (int frameIdx = 0; ; frameIdx++) {
 		for (int view = 0; view < cameras.size(); view++) {
 			videos[view] >> rawImgs[view];
+			if (rawImgs[view].empty())
+				return 0;
 			associater.SetDetection(view, seqDetections[view][frameIdx].Mapping(SKEL19));
 		}
 
