@@ -1,0 +1,13 @@
+*
+!*/
+!.gitignore
+!*.cpp
+!*.hpp
+!*.h
+!*.c
+!*.cu
+!*.sln
+!*.props
+!*.vcxproj
+!*.vcxproj.user
+
