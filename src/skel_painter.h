@@ -14,6 +14,7 @@ struct SkelPainter
 	int jointRadius = 5;
 	int pafThickness = 3;
 	float textScale = 1.f;
+	float rate = 1.f;
 
 	SkelPainter(const SkelType& _type) { type = _type; }
 	static std::vector<cv::Rect> MergeImgs(const std::vector<cv::Mat>& imgs, cv::Mat& mergedImg, 

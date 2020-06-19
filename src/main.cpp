@@ -31,7 +31,7 @@ int main()
 				joints.row(1) *= imgSize.height;
 			}
 		}
-		rawImgs[i] = cv::Mat();
+		rawImgs[i].create(imgSize, CV_8UC3);
 	}
 
 	KruskalAssociater associater(SKEL19, cameras);

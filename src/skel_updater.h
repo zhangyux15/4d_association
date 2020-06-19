@@ -26,6 +26,8 @@ class SkelTriangulateUpdater : public SkelUpdater
 public:
 	SkelTriangulateUpdater(const SkelType& type) :SkelUpdater(type) {}
 	virtual void Update(const std::map<int, Eigen::Matrix3Xf>& skels2d, const Eigen::Matrix3Xf& projs) override;
+	void SetTriangulateThresh(const float& thresh) { m_triangulateThresh = thresh; }
+	void SetMinTrackCnt(const int& cnt) { m_minTrackJCnt = cnt; }
 
 protected:
 	Eigen::Matrix4Xf TriangulatePerson(const Eigen::Matrix3Xf& skel2d, const Eigen::Matrix3Xf& projs);
@@ -41,6 +43,15 @@ public:
 		: SkelTriangulateUpdater(type), m_solver(type, modelPath) {}
 
 	virtual void Update(const std::map<int, Eigen::Matrix3Xf>& skels2d, const Eigen::Matrix3Xf& projs) override;
+	void SetBoneCapacity(const int& capacity) { m_boneCapacity = capacity; }
+	void SetSquareShapeTerm(const float& squareShape) { m_wSquareShape = squareShape; }
+	void SetRegularPoseTerm(const float& regularPose) { m_wRegularPose = regularPose; }
+	void SetTemporalTransTerm(const float& temporalTrans) { m_wTemporalTrans = temporalTrans; }
+	void SetTemporalPoseTerm(const float& temporalPose) { m_wTemporalPose = temporalPose; }
+	void SetShapeMaxIter(const int& cnt) { m_shapeMaxIter = cnt; }
+	void SetPoseMaxIter(const int& cnt) { m_poseMaxIter = cnt; }
+	void SetInitActive(const float& active) { m_initActive = active; }
+	void SetActiveRate(const float& rate) { m_activeRate = rate; }
 
 private:
 	struct SkelInfo : public SkelParam

@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.28307.1022
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mocap", "mocap\mocap.vcxproj", "{D4126E65-F5E7-47F4-A30F-BF50294C9946}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "evaluate_shelf", "evaluate_shelf\evaluate_shelf.vcxproj", "{EF6FCE96-5C71-4B47-BA85-D58E5FE0386F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -19,6 +21,14 @@ Global
 		{D4126E65-F5E7-47F4-A30F-BF50294C9946}.Release|x64.ActiveCfg = Release|x64
 		{D4126E65-F5E7-47F4-A30F-BF50294C9946}.Release|x64.Build.0 = Release|x64
 		{D4126E65-F5E7-47F4-A30F-BF50294C9946}.Release|x86.ActiveCfg = Release|x64
+		{EF6FCE96-5C71-4B47-BA85-D58E5FE0386F}.Debug|x64.ActiveCfg = Debug|x64
+		{EF6FCE96-5C71-4B47-BA85-D58E5FE0386F}.Debug|x64.Build.0 = Debug|x64
+		{EF6FCE96-5C71-4B47-BA85-D58E5FE0386F}.Debug|x86.ActiveCfg = Debug|Win32
+		{EF6FCE96-5C71-4B47-BA85-D58E5FE0386F}.Debug|x86.Build.0 = Debug|Win32
+		{EF6FCE96-5C71-4B47-BA85-D58E5FE0386F}.Release|x64.ActiveCfg = Release|x64
+		{EF6FCE96-5C71-4B47-BA85-D58E5FE0386F}.Release|x64.Build.0 = Release|x64
+		{EF6FCE96-5C71-4B47-BA85-D58E5FE0386F}.Release|x86.ActiveCfg = Release|Win32
+		{EF6FCE96-5C71-4B47-BA85-D58E5FE0386F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

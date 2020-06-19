@@ -34,8 +34,8 @@ void SkelPainter::DrawDetect(const std::vector<Eigen::Matrix3Xf>& joints, const 
 				for (int jbCandiIdx = 0; jbCandiIdx < joints[jbIdx].cols(); jbCandiIdx++) {
 					if (pafs[pafIdx](jaCandiIdx, jbCandiIdx) < FLT_EPSILON)
 						continue;
-					cv::line(img, cv::Point(joints[jaIdx](0,jaCandiIdx), joints[jaIdx](1, jaCandiIdx)),
-						cv::Point(joints[jbIdx](0, jbCandiIdx), joints[jbIdx](1, jbCandiIdx)),
+					cv::line(img, rate * cv::Point(joints[jaIdx](0,jaCandiIdx), joints[jaIdx](1, jaCandiIdx)),
+						rate * cv::Point(joints[jbIdx](0, jbCandiIdx), joints[jbIdx](1, jbCandiIdx)),
 						ColorUtil::GetColor(-1), pafThickness);
 				}
 			}
@@ -48,9 +48,9 @@ void SkelPainter::DrawDetect(const std::vector<Eigen::Matrix3Xf>& joints, const 
 			for (int candiIdx = 0; candiIdx < joints[jIdx].cols(); candiIdx++) {
 				const cv::Point jPos(joints[jIdx](0, candiIdx), joints[jIdx](1, candiIdx));
 				if (jointRadius > 0)
-					cv::circle(img, jPos, jointRadius, ColorUtil::GetColor(-1), 1);
+					cv::circle(img, rate * jPos, jointRadius, ColorUtil::GetColor(-1), 1);
 				if (textScale > 0.f)
-					cv::putText(img, std::to_string(jIdx), jPos, cv::FONT_HERSHEY_PLAIN, textScale, ColorUtil::GetColor(-1));
+					cv::putText(img, std::to_string(jIdx), rate * jPos, cv::FONT_HERSHEY_PLAIN, textScale, ColorUtil::GetColor(-1));
 			}
 		}
 	}
@@ -68,20 +68,20 @@ void SkelPainter::DrawAssoc(const Eigen::Matrix3Xf& skel2d, cv::Mat img, const i
 
 		cv::Point jPos(skel2d(0, jIdx), skel2d(1, jIdx));
 		if (jointRadius > 0)
-			cv::circle(img, jPos, jointRadius, ColorUtil::GetColor(identity), 1);
+			cv::circle(img, rate * jPos, jointRadius, ColorUtil::GetColor(identity), 1);
 		if (textScale > 0.f)
-			cv::putText(img, std::to_string(jIdx), jPos, cv::FONT_HERSHEY_PLAIN, textScale, ColorUtil::GetColor(identity));
+			cv::putText(img, std::to_string(jIdx), rate * jPos, cv::FONT_HERSHEY_PLAIN, textScale, ColorUtil::GetColor(identity));
 	}
 
 	if (pafThickness > 0) {
-		for (int pafIdx = 0; pafIdx < def.pafSize; pafIdx++) {
-			const int jaIdx = def.pafDict(0, pafIdx);
-			const int jbIdx = def.pafDict(1, pafIdx);
+		for (int boneIdx = 0; boneIdx < def.drawBone.cols(); boneIdx++) {
+			const int jaIdx = def.drawBone(0, boneIdx);
+			const int jbIdx = def.drawBone(1, boneIdx);
 			if (skel2d(2, jaIdx) < FLT_EPSILON || skel2d(2, jbIdx) < FLT_EPSILON)
 				continue;
 
-			cv::line(img, cv::Point(skel2d(0, jaIdx), skel2d(1, jaIdx)),
-				cv::Point(skel2d(0, jbIdx), skel2d(1, jbIdx)),
+			cv::line(img, rate * cv::Point(skel2d(0, jaIdx), skel2d(1, jaIdx)),
+				rate * cv::Point(skel2d(0, jbIdx), skel2d(1, jbIdx)),
 				ColorUtil::GetColor(identity), pafThickness);
 		}
 	}
@@ -104,20 +104,20 @@ void SkelPainter::DrawReproj(const Eigen::Matrix4Xf& skel3d, const Eigen::Matrix
 
 		cv::Point jPos(skel2d(0, jIdx), skel2d(1, jIdx));
 		if (jointRadius > 0)
-			cv::circle(img, jPos, jointRadius, ColorUtil::GetColor(identity), 1);
+			cv::circle(img, rate * jPos, jointRadius, ColorUtil::GetColor(identity), 1);
 		if (textScale > 0.f)
-			cv::putText(img, std::to_string(jIdx), jPos, cv::FONT_HERSHEY_PLAIN, textScale, ColorUtil::GetColor(identity));
+			cv::putText(img, std::to_string(jIdx), rate * jPos, cv::FONT_HERSHEY_PLAIN, textScale, ColorUtil::GetColor(identity));
 	}
 
 	if (pafThickness > 0) {
-		for (int pafIdx = 0; pafIdx < def.pafSize; pafIdx++) {
-			const int jaIdx = def.pafDict(0, pafIdx);
-			const int jbIdx = def.pafDict(1, pafIdx);
+		for (int boneIdx = 0; boneIdx < def.drawBone.cols(); boneIdx++) {
+			const int jaIdx = def.drawBone(0, boneIdx);
+			const int jbIdx = def.drawBone(1, boneIdx);
 			if (skel2d(2, jaIdx) < FLT_EPSILON || skel2d(2, jbIdx) < FLT_EPSILON)
 				continue;
 
-			cv::line(img, cv::Point(skel2d(0, jaIdx), skel2d(1, jaIdx)),
-				cv::Point(skel2d(0, jbIdx), skel2d(1, jbIdx)),
+			cv::line(img, rate * cv::Point(skel2d(0, jaIdx), skel2d(1, jaIdx)),
+				rate * cv::Point(skel2d(0, jbIdx), skel2d(1, jbIdx)),
 				ColorUtil::GetColor(identity), pafThickness);
 		}
 	}
