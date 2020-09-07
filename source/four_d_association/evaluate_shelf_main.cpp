@@ -1,7 +1,8 @@
-#include "../src/kruskal_associater.h"
-#include "../src/skel_updater.h"
-#include "../src/skel_painter.h"
-#include "../src/hungarian_algorithm.h"
+#include <iostream>
+#include "kruskal_associater.h"
+#include "skel_updater.h"
+#include "skel_painter.h"
+#include "hungarian_algorithm.h"
 #include <opencv2/opencv.hpp>
 #include <json/json.h>
 

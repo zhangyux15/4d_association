@@ -1,7 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include "skel_painter.h"
 #include "openpose.h"
-
+#include <fstream>
 
 OpenposeDetection::OpenposeDetection(const SkelType& _type)
 {

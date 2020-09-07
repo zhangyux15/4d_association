@@ -1,3 +1,4 @@
+#include <float.h>
 #include "hungarian_algorithm.h"
 #include <vector>
 #include <algorithm>

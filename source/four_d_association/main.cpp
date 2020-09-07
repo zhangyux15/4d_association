@@ -1,3 +1,4 @@
+#include <iostream>
 #include "kruskal_associater.h"
 #include "skel_updater.h"
 #include "skel_painter.h"

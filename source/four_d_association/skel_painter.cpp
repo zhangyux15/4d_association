@@ -1,3 +1,4 @@
+#include <iostream>
 #include "skel_painter.h"
 #include "color_util.h"
 #include "math_util.h"
