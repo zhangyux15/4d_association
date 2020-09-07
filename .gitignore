@@ -1,3 +1,6 @@
+
+
+
 *
 !*/
 !.gitignore
@@ -11,3 +14,6 @@
 !*.vcxproj
 !*.vcxproj.user
 
+build/
+include/
+library/
