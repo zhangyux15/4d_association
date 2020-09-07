@@ -15,6 +15,38 @@ This project uses CMake as the build script, which has been compiled and tested 
 The project requires the following components: [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page), [jsoncpp](https://github.com/open-source-parsers/jsoncpp) and [opencv(4.2+)](https://opencv.org/).
 
 #### How to build on Windows (Visual Studio 2017/2019 x64)
+###### 1. Download code.
+Use any method you are familiar with to get the code.
+###### 2. Configure OpenCV environment.
+1. Get OpenCV Windows package (4.2 or 4.4 version) from https://opencv.org/releases/, and unzip it a place, such as 'D:\Software\OpenCV\'.'
+2. Create the following environment variables:
+```
+ENV: OPENCV_DIR
+VALUE: D:\Software\OpenCV\build
+```
+```
+ENV: OpenCV_BIN_DIR
+VALUE: %OPENCV_DIR%\x64\vc14\bin
+```
+3. Add the following value to 'path' envirorment variable:
+```
+%OpenCV_BIN_DIR%
+```
+###### 3. Configure other dependent libraries.
+Obtain DependentLibraries.zip and unzip it into the repository folder. Overwrite the original include and library directories.
+You can get DependentLibraries.zip from https://pan.baidu.com/s/1WMPvqZLmu64ZE35wMHHqgw code: jbid
+###### 4. Generate Visual Studio project files.
+For Visual Studio 2017 (x64)
+```
+build\vs2017-x64\make-solutions.bat
+```
+For Visual Studio 2019 (x64)
+```
+build\vs2019-x64\make-solutions.bat
+```
+###### 5. Compile the project.
+Double-click 'BaseProject.sln' directly to open the project for compilation. And you can use both release and debug mode.
+
 #### How to build on Linux (Ubuntu 20.04 x64)
 1. Install dependent components.
 ```
