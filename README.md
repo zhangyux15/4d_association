@@ -1,6 +1,8 @@
 # 4d_association
 Code for cvpr2020 "4D Association Graph for Realtime Multi-person Motion Capture Using Multiple Video Cameras"
 
+Thanks for the cmake version by Peixuan Zhang(check the linux branch).
+
 ### Introduction
 Our work [4D Association Graph](http://www.liuyebin.com/4dassociation) contributes a novel realtime multi-personmotion capture algorithm using multiview video inputs. Due to the heavy occlusions and closely interacting motions in each view, joint optimization on the multiview images and multiple temporal frames is indispensable, which brings up the essential challenge of realtime efﬁciency. Our contributions include:
 + 4D Association Graph Representation: unify per-view parsing, cross-view matching, and temporal tracking into a single optimization framework that each dimension can be treated equally and simultaneously. Existing association methods consider only parts of these associations, or simply operate them in a sequential manner, which reduce the quality and efficiency of motion reconstruction. 
