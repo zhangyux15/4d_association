@@ -227,6 +227,7 @@ void KruskalAssociater::EnumCliques(std::vector<BoneClique>& cliques)
 }
 
 
+
 void KruskalAssociater::CalcCliqueScore(BoneClique& clique)
 {
 	// epipolar score
