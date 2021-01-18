@@ -110,122 +110,98 @@ void KruskalAssociater::CalcBoneTempEdges()
 		}
 	}
 }
-
+   
          
 void KruskalAssociater::EnumCliques(std::vector<BoneClique>& cliques)
 {
 	// enum cliques
 	const SkelDef& def = GetSkelDef(m_type);
 
-	std::vector<std::vector<Eigen::VectorXi>> availMap(def.pafSize, std::vector<Eigen::VectorXi>(m_cams.size()));
-	for (int pafIdx = 0; pafIdx < def.pafSize; pafIdx++) 
-		for (int view = 0; view < m_cams.size(); view++) 
-			availMap[pafIdx][view].setOnes(m_boneNodes[pafIdx][view].size());
-
-	for (int validViewCnt = int(m_cams.size()); validViewCnt > 0; validViewCnt--) {
-		std::vector<std::vector<BoneClique>> tmpCliques(def.pafSize);
+	std::vector<std::vector<BoneClique>> tmpCliques(def.pafSize);
 #pragma omp parallel for
-		for (int pafIdx = 0; pafIdx < def.pafSize; pafIdx++) {
-			const auto& jIdxPair = def.pafDict.col(pafIdx);
-			const auto& nodes = m_boneNodes[pafIdx];
-			std::vector<Eigen::VectorXi>& avail = availMap[pafIdx];
-			Eigen::VectorXi pick = -Eigen::VectorXi::Ones(m_cams.size() + 1);
-			std::vector<std::vector<std::list<int>>> availNodes(pick.size(), std::vector<std::list<int>>(pick.size()));
+	for (int pafIdx = 0; pafIdx < def.pafSize; pafIdx++) {
+		const auto jIdxPair = def.pafDict.col(pafIdx);
+		const auto& nodes = m_boneNodes[pafIdx];
+		Eigen::VectorXi pick = -Eigen::VectorXi::Ones(m_cams.size() + 1);
+		std::vector<std::vector<std::list<int>>> availNodes(pick.size(), std::vector<std::list<int>>(pick.size()));
 
-			int viewCnt = 0;
-			int index = -1;
-			while (true) {
-				if (index >= 0 && pick[index] >= int(availNodes[index][index].size())) {
-					if (pick[index] >= 0 && index != m_cams.size())
-						viewCnt--;
-					pick[index] = -1;
+		int viewCnt = 0;
+		int index = -1;
+		while (true) {
+			if (index >= 0 && pick[index] >= int(availNodes[index][index].size())) {
+				pick[index] = -1;
 
-					if (--index < 0)
-						break;
+				if (--index < 0)
+					break;
 
-					if (pick[index] == -1 && index != m_cams.size())
-						viewCnt++;
-					pick[index]++;
-				}
-				else if (index == pick.size() - 1) {
+				pick[index]++;
+			}
+			else if (index == pick.size() - 1) {
+				if (pick.head(m_cams.size()).sum() != -m_cams.size()) {
 					BoneClique clique;
 					clique.pafIdx = pafIdx;
 					clique.proposal.setConstant(pick.size(), -1);
-					for (int i = 0; i < pick.size(); i++) {
-						if (pick[i] != -1) {
+					for (int i = 0; i < pick.size(); i++)
+						if (pick[i] != -1)
 							clique.proposal[i] = *std::next(availNodes[i][i].begin(), pick[i]);
-							if (i < m_cams.size())
-								avail[i][clique.proposal[i]] = 0;
-						}
-					}
 
 					CalcCliqueScore(clique);
 					tmpCliques[pafIdx].emplace_back(clique);
+				}
+				pick[index]++;
+			}
+			else {
+				index++;
 
-					pick[index]++;
+				// update available nodes
+				if (index == 0) {
+					for (int view = 0; view < m_cams.size(); view++) {
+						const auto& asgnMap = m_assignMap[view];
+						for (int bone = 0; bone < nodes[view].size(); bone++) 
+							availNodes[0][view].emplace_back(bone);
+					}
+					for (int pIdx = 0; pIdx < m_skels3dPrev.size(); pIdx++)
+						availNodes[0].back().emplace_back(pIdx);
 				}
 				else {
-					index++;
-					if (m_cams.size() - index < validViewCnt - viewCnt) {
-						if (pick[index] == -1 && index != m_cams.size())
-							viewCnt++;
-						pick[index] = int(availNodes[index][index].size());
-					}
-					else {
-						// update available nodes
-						if (index == 0) {
-							for (int view = 0; view < m_cams.size(); view++) {
-								const auto& asgnMap = m_assignMap[view];
-								for (int bone = 0; bone < nodes[view].size(); bone++) {
-									if (m_nodeMultiplex || avail[view][bone])
-										availNodes[0][view].emplace_back(bone);
-								}
+					// epipolar constrain
+					if (pick[index - 1] >= 0) {
+						for (int view = index; view < m_cams.size(); view++) {
+							availNodes[index][view].clear();
+							const auto& epiEdges = m_boneEpiEdges[pafIdx][index - 1][view];
+							const int boneAIdx = *std::next(availNodes[index - 1][index - 1].begin(), pick[index - 1]);
+							const auto& asgnMap = m_assignMap[view];
+							for (const int& boneBIdx : availNodes[index - 1][view]) {
+								if (epiEdges(boneAIdx, boneBIdx) > FLT_EPSILON)
+									availNodes[index][view].emplace_back(boneBIdx);
 							}
-							for (int pIdx = 0; pIdx < m_skels3dPrev.size(); pIdx++)
-								availNodes[0].back().emplace_back(pIdx);
 						}
-						else {
-							// epipolar constrain
-							if (pick[index - 1] >= 0) {
-								for (int view = index; view < m_cams.size(); view++) {
-									availNodes[index][view].clear();
-									const auto& epiEdges = m_boneEpiEdges[pafIdx][index - 1][view];
-									const int boneAIdx = *std::next(availNodes[index - 1][index - 1].begin(), pick[index - 1]);
-									const auto& asgnMap = m_assignMap[view];
-									for (const int& boneBIdx : availNodes[index - 1][view]) {
-										if (epiEdges(boneAIdx, boneBIdx) > 0.f && avail[view][boneBIdx])
-											availNodes[index][view].emplace_back(boneBIdx);
-									}
-								}
-							}
-							else
-								for (int view = index; view < m_cams.size(); view++)
-									availNodes[index][view] = availNodes[index - 1][view];
+					}
+					else
+						for (int view = index; view < m_cams.size(); view++)
+							availNodes[index][view] = availNodes[index - 1][view];
 
-							// temporal constrain
-							if (pick[m_cams.size() - 1] >= 0) {
-								availNodes[index].back().clear();
-								const auto& tempEdge = m_boneTempEdges[pafIdx][m_cams.size() - 1];
-								const int boneIdx = *std::next(availNodes[m_cams.size() - 1][m_cams.size() - 1].begin(), pick[m_cams.size() - 1]);
-								for (const int& pIdx : availNodes[index - 1].back())
-									if (tempEdge(pIdx, boneIdx) > 0.f)
-										availNodes[index].back().emplace_back(pIdx);
-							}
-							else
-								availNodes[index].back() = availNodes[index - 1].back();
-						}
+					// temporal constrain
+					if (pick[m_cams.size() - 1] >= 0) {
+						availNodes[index].back().clear();
+						const auto& tempEdge = m_boneTempEdges[pafIdx][m_cams.size() - 1];
+						const int boneIdx = *std::next(availNodes[m_cams.size() - 1][m_cams.size() - 1].begin(), pick[m_cams.size() - 1]);
+						for (const int& pIdx : availNodes[index - 1].back())
+							if (tempEdge(pIdx, boneIdx) > FLT_EPSILON)
+								availNodes[index].back().emplace_back(pIdx);
 					}
+					else
+						availNodes[index].back() = availNodes[index - 1].back();
 				}
 			}
 		}
-
-		// combine
-		for (int pafIdx = 0; pafIdx < def.pafSize; pafIdx++)
-			cliques.insert(cliques.end(), tmpCliques[pafIdx].begin(), tmpCliques[pafIdx].end());
 	}
+	// combine
+	for (int pafIdx = 0; pafIdx < def.pafSize; pafIdx++)
+		cliques.insert(cliques.end(), tmpCliques[pafIdx].begin(), tmpCliques[pafIdx].end());
+
 	std::make_heap(cliques.begin(), cliques.end());
 }
-
 
 
 void KruskalAssociater::CalcCliqueScore(BoneClique& clique)
