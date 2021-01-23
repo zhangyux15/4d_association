@@ -4,6 +4,13 @@ Code for cvpr2020 "4D Association Graph for Realtime Multi-person Motion Capture
 **Thanks for the cmake version by Peixuan Zhang(check the linux branch).**
 
 **Fix an important bug in clique enumeration 2021/1/18**
+**Add four multiview markless dataset for test, and update the skeleton tracking algorithm to make more stable skeleton. 2021/1/23**
+![dataset_img](https://github.com/zhangyux15/4d_association/blob/windows/markerless_data.png)
+
+You can download the dataset in 
+```
+ https://cloud.tsinghua.edu.cn/f/82b5512334344a4187ff/?dl=1
+```
 
 ### Introduction
 Our work [4D Association Graph](http://www.liuyebin.com/4dassociation) contributes a novel realtime multi-personmotion capture algorithm using multiview video inputs. Due to the heavy occlusions and closely interacting motions in each view, joint optimization on the multiview images and multiple temporal frames is indispensable, which brings up the essential challenge of realtime efﬁciency. Our contributions include:
