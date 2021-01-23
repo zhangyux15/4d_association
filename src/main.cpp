@@ -57,13 +57,18 @@ int main()
 	cv::Mat detectImg, assocImg, reprojImg;
 	cv::Mat resizeImg;
 	for (int frameIdx = 0; ; frameIdx++) {
+		bool flag = true;
 		for (int view = 0; view < cameras.size(); view++) {
 			videos[view] >> rawImgs[view];
-			if (rawImgs[view].empty())
-				return 0;
+			if (rawImgs[view].empty()) {
+				flag = false;
+				break;
+			}
 			cv::resize(rawImgs[view], rawImgs[view], cv::Size(), skelPainter.rate, skelPainter.rate);
 			associater.SetDetection(view, seqDetections[view][frameIdx].Mapping(SKEL19));
 		}
+		if (flag)
+			break;
 
 		associater.SetSkels3dPrev(skelUpdater.GetSkel3d());
 		associater.Associate();
