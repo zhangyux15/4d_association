@@ -67,7 +67,7 @@ int main()
 			cv::resize(rawImgs[view], rawImgs[view], cv::Size(), skelPainter.rate, skelPainter.rate);
 			associater.SetDetection(view, seqDetections[view][frameIdx].Mapping(SKEL19));
 		}
-		if (flag)
+		if (!flag)
 			break;
 
 		associater.SetSkels3dPrev(skelUpdater.GetSkel3d());
