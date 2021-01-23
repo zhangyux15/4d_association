@@ -40,6 +40,7 @@ public:
 		float wSquareShape = 0.f;
 	};
 
+	void AlignRT(const Term& term, SkelParam& param) const;
 	void SolvePose(const Term& term, SkelParam& param, const int& maxIterTime, const bool& hierarchy = false, const float& updateThresh = 1e-4f);
 	void SolveShape(const Term& term, SkelParam& param, const int& maxIterTime, const float& updateThresh = 1e-4f) const;
 

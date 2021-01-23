@@ -32,8 +32,8 @@ float Associater::Line2LineDist(const Eigen::Vector3f& pA, const Eigen::Vector3f
 }
 
 
-void Associater::Initialize() 
-{ 
+void Associater::Initialize()
+{
 	const SkelDef& def = GetSkelDef(m_type);
 #pragma omp parallel for
 	for (int jIdx = 0; jIdx < def.jointSize; jIdx++)
@@ -47,7 +47,7 @@ void Associater::Initialize()
 
 
 void Associater::CalcJointRays()
-{	
+{
 	const SkelDef& def = GetSkelDef(m_type);
 #pragma omp parallel for
 	for (int view = 0; view < m_cams.size(); view++) {
@@ -57,6 +57,29 @@ void Associater::CalcJointRays()
 			m_jointRays[view][jIdx].resize(3, joints.cols());
 			for (int jCandiIdx = 0; jCandiIdx < joints.cols(); jCandiIdx++)
 				m_jointRays[view][jIdx].col(jCandiIdx) = cam.CalcRay(joints.block<2, 1>(0, jCandiIdx));
+		}
+	}
+}
+
+
+void Associater::CalcPafEdges()
+{
+	const SkelDef& def = GetSkelDef(m_type);
+	if (m_normalizeEdges) {
+#pragma omp parallel for
+		for (int pafIdx = 0; pafIdx < def.pafSize; pafIdx++) {
+			const Eigen::Vector2i jIdxPair = def.pafDict.col(pafIdx).transpose();
+			for (auto&& detection : m_detections) {
+				auto&& pafs = detection.pafs[pafIdx];
+				if (pafs.size() > 0) {
+					Eigen::VectorXf rowFactor = pafs.rowwise().sum().transpose().cwiseMax(1.f);
+					Eigen::VectorXf colFactor = pafs.colwise().sum().cwiseMax(1.f);
+					for (int i = 0; i < rowFactor.size(); i++)
+						pafs.row(i) /= rowFactor[i];
+					for (int i = 0; i < colFactor.size(); i++)
+						pafs.col(i) /= colFactor[i];
+				}
+			}
 		}
 	}
 }
@@ -76,16 +99,29 @@ void Associater::CalcEpiEdges()
 				const Eigen::Matrix3Xf& jointsB = m_detections[viewB].joints[jIdx];
 				const Eigen::Matrix3Xf& raysA = m_jointRays[viewA][jIdx];
 				const Eigen::Matrix3Xf& raysB = m_jointRays[viewB][jIdx];
-				epi.setConstant(jointsA.cols(), jointsB.cols(), -1.f);
-				for (int jaCandiIdx = 0; jaCandiIdx < epi.rows(); jaCandiIdx++) {
-					for (int jbCandiIdx = 0; jbCandiIdx < epi.cols(); jbCandiIdx++) {
-						const float dist = Line2LineDist(
-							camAIter->second.eiPos, raysA.col(jaCandiIdx), camBIter->second.eiPos, raysB.col(jbCandiIdx));
-						if (dist < m_maxEpiDist)
-							epi(jaCandiIdx, jbCandiIdx) = 1.f - dist / m_maxEpiDist;
+				if (jointsA.cols() > 0 && jointsB.cols() > 0) {
+					epi.setConstant(jointsA.cols(), jointsB.cols(), -1.f);
+					for (int jaCandiIdx = 0; jaCandiIdx < epi.rows(); jaCandiIdx++) {
+						for (int jbCandiIdx = 0; jbCandiIdx < epi.cols(); jbCandiIdx++) {
+							const float dist = Line2LineDist(
+								camAIter->second.eiPos, raysA.col(jaCandiIdx), camBIter->second.eiPos, raysB.col(jbCandiIdx));
+							if (dist < m_maxEpiDist)
+								epi(jaCandiIdx, jbCandiIdx) = 1.f - dist / m_maxEpiDist;
+						}
 					}
+
+					if (m_normalizeEdges) {
+						Eigen::VectorXf rowFactor = epi.rowwise().sum().transpose().cwiseMax(1.f);
+						Eigen::VectorXf colFactor = epi.colwise().sum().cwiseMax(1.f);
+						for (int i = 0; i < rowFactor.size(); i++)
+							epi.row(i) /= rowFactor[i];
+
+						for (int i = 0; i < colFactor.size(); i++)
+							epi.col(i) /= colFactor[i];
+					}
+					m_epiEdges[jIdx][viewB][viewA] = epi.transpose();
+
 				}
-				m_epiEdges[jIdx][viewB][viewA] = epi.transpose();
 			}
 		}
 	}
@@ -101,15 +137,27 @@ void Associater::CalcTempEdges()
 		for (int view = 0; view < m_cams.size(); view++, camIter++) {
 			Eigen::MatrixXf& temp = m_tempEdges[jIdx][view];
 			const Eigen::Matrix3Xf& rays = m_jointRays[view][jIdx];
-			temp.setConstant(m_skels3dPrev.size(), rays.cols(), -1.f);
-			int pIdx = 0;
-			for (auto skelIter = m_skels3dPrev.begin(); skelIter != m_skels3dPrev.end(); skelIter++, pIdx++) {
-				if (skelIter->second(3, jIdx) > FLT_EPSILON) {
-					for (int jCandiIdx = 0; jCandiIdx < temp.cols(); jCandiIdx++) {
-						const float dist = Point2LineDist(skelIter->second.col(jIdx).head(3), camIter->second.eiPos, rays.col(jCandiIdx));
-						if (dist < m_maxTempDist)
-							temp(pIdx, jCandiIdx) = 1.f - dist / m_maxTempDist;
+			if (m_skels3dPrev.size() > 0 && rays.cols() > 0) {
+				temp.setConstant(m_skels3dPrev.size(), rays.cols(), -1.f);
+				int pIdx = 0;
+				for (auto skelIter = m_skels3dPrev.begin(); skelIter != m_skels3dPrev.end(); skelIter++, pIdx++) {
+					if (skelIter->second(3, jIdx) > FLT_EPSILON) {
+						for (int jCandiIdx = 0; jCandiIdx < temp.cols(); jCandiIdx++) {
+							const float dist = Point2LineDist(skelIter->second.col(jIdx).head(3), camIter->second.eiPos, rays.col(jCandiIdx));
+							if (dist < m_maxTempDist)
+								temp(pIdx, jCandiIdx) = 1.f - dist / m_maxTempDist;
+						}
 					}
+				}
+
+				if (m_normalizeEdges) {
+					Eigen::VectorXf rowFactor = temp.rowwise().sum().transpose().cwiseMax(1.f);
+					Eigen::VectorXf colFactor = temp.colwise().sum().cwiseMax(1.f);
+					for (int i = 0; i < rowFactor.size(); i++)
+						temp.row(i) /= rowFactor[i];
+
+					for (int i = 0; i < colFactor.size(); i++)
+						temp.col(i) /= colFactor[i];
 				}
 			}
 		}
@@ -144,10 +192,11 @@ void Associater::CalcSkels2d()
 		Eigen::Matrix3Xf skel2d = Eigen::Matrix3Xf::Zero(3, m_cams.size() * def.jointSize);
 		for (int view = 0; view < m_cams.size(); view++) {
 			for (int jIdx = 0; jIdx < def.jointSize; jIdx++) {
-				const int index = person.second(jIdx, view);
-				if (index != -1) 
-					skel2d.col(view * def.jointSize + jIdx) = m_detections[view].joints[jIdx].col(index);
-					}
+				const int index = person.second(jIdx, view); {
+					if (index != -1)
+						skel2d.col(view * def.jointSize + jIdx) = m_detections[view].joints[jIdx].col(index);
+				}
+			}
 		}
 		m_skels2d.insert(std::make_pair(identity, skel2d));
 	}

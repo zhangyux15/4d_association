@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>C:\cppmodule\opencv\lib\opencv_world420.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>C:\cppmodule\opencv\lib\opencv_world440.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

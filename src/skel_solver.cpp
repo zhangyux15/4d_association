@@ -15,6 +15,27 @@ SkelSolver::SkelSolver(const SkelType& _type, const std::string& modelPath)
 }
 
 
+void SkelSolver::AlignRT(const Term& term, SkelParam& param) const
+{
+	// align root affine
+	param.GetTrans() = term.j3dTarget.col(0).head<3>() - m_joints.col(0);
+	auto CalcAxes = [](const Eigen::Vector3f& xAxis, const Eigen::Vector3f& yAxis) {
+		Eigen::Matrix3f axes;
+		axes.col(0) = xAxis.normalized();
+		axes.col(2) = xAxis.cross(yAxis).normalized();
+		axes.col(1) = axes.col(2).cross(axes.col(0)).normalized();
+		return axes;
+	};
+
+	const Eigen::Matrix3f mat = CalcAxes(
+		term.j3dTarget.col(2).head<3>() - term.j3dTarget.col(1).head<3>(),
+		term.j3dTarget.col(3).head<3>() - term.j3dTarget.col(1).head<3>())
+		* (CalcAxes(m_joints.col(2) - m_joints.col(1), m_joints.col(3) - m_joints.col(1)).inverse());
+	const Eigen::AngleAxisf angleAxis(mat);
+	param.GetPose().head(3) = angleAxis.angle() * angleAxis.axis();
+}
+
+
 void SkelSolver::SolvePose(const Term& term, SkelParam& param, const int& maxIterTime, const bool& hierarchy, const float& updateThresh)
 {
 	const SkelDef& def = GetSkelDef(m_type);

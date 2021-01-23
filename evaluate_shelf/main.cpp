@@ -95,7 +95,6 @@ int main()
 	KruskalAssociater associater(SKEL19, cams);
 	associater.SetMaxTempDist(0.2f);
 	associater.SetMaxEpiDist(0.15f);
-	associater.SetPlaneThetaWelsh(5e-3f);
 	associater.SetEpiWeight(2.f);
 	associater.SetTempWeight(2.f);
 	associater.SetViewWeight(2.f);
@@ -104,6 +103,7 @@ int main()
 	associater.SetViewCntWelsh(1.5f);
 	associater.SetMinCheckCnt(1);
 	associater.SetNodeMultiplex(true);
+	associater.SetNormalizeEdge(true);			// new feature
 
 #ifdef RUN_OLD_VERSION
 	SkelFittingUpdater skelUpdater(SKEL19, "../data/skel/SKEL19_old");

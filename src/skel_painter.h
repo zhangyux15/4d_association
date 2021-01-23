@@ -11,8 +11,8 @@
 struct SkelPainter
 {
 	SkelType type;
-	int jointRadius = 5;
-	int pafThickness = 3;
+	int jointRadius = 3;
+	int pafThickness = 2;
 	float textScale = 1.f;
 	float rate = 1.f;
 

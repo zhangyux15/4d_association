@@ -9,6 +9,7 @@
     <Link>
       <AdditionalDependencies>C:/cppmodule/json/lib/*.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <ClCompile />
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>

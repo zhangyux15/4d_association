@@ -76,7 +76,7 @@ void KruskalAssociater::CalcBoneEpiEdges()
 							continue;
 
 						const float cosine = fabsf(normals.col(0).dot(normals.col(1)));
-						epi(boneAIdx, boneBIdx) = 1 - MathUtil::Welsch(m_cPlaneTheta, 1 - cosine) + epiDist.mean();
+						epi(boneAIdx, boneBIdx) = epiDist.mean();
 					}
 				}
 				m_boneEpiEdges[pafIdx][viewB][viewA] = epi.transpose();
@@ -137,7 +137,7 @@ void KruskalAssociater::EnumCliques(std::vector<BoneClique>& cliques)
 				pick[index]++;
 			}
 			else if (index == pick.size() - 1) {
-				if (pick.head(m_cams.size()).sum() != -m_cams.size()) {
+				if (-pick.head(m_cams.size()).sum() != m_cams.size()) {
 					BoneClique clique;
 					clique.pafIdx = pafIdx;
 					clique.proposal.setConstant(pick.size(), -1);
@@ -303,13 +303,13 @@ int KruskalAssociater::CheckJointCompatibility(const int& view, const int& jIdx,
 			return -1;
 	}
 
-	// temp conflict
-	if (pIdx < m_skels3dPrev.size()) {
-		if (m_tempEdges[jIdx][view](pIdx, candiIdx) > 0.f)
-			checkCnt++;
-		else
-			return -1;
-	}
+	//// temp conflict
+	//if (pIdx < m_skels3dPrev.size()) {
+	//	if (m_tempEdges[jIdx][view](pIdx, candiIdx) > 0.f)
+	//		checkCnt++;
+	//	else
+	//		return -1;
+	//}
 
 	return checkCnt;
 }
@@ -777,6 +777,7 @@ void KruskalAssociater::SpanTree()
 void KruskalAssociater::Associate()
 {
 	CalcJointRays();
+	CalcPafEdges();
 	CalcEpiEdges();
 	CalcTempEdges();
 	CalcBoneNodes();

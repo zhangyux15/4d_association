@@ -50,22 +50,24 @@ public:
 	void SetTemporalPoseTerm(const float& temporalPose) { m_wTemporalPose = temporalPose; }
 	void SetShapeMaxIter(const int& cnt) { m_shapeMaxIter = cnt; }
 	void SetPoseMaxIter(const int& cnt) { m_poseMaxIter = cnt; }
+	void SetMinTriangulateJCnt(const int& jcnt) { m_minTriangulateJCnt = jcnt; }
 	void SetInitActive(const float& active) { m_initActive = active; }
 	void SetActiveRate(const float& rate) { m_activeRate = rate; }
 
 private:
 	struct SkelInfo : public SkelParam
 	{
-		SkelInfo() {}
 		SkelInfo(const SkelType& type) :SkelParam(type) {
 			boneLen.setZero(GetSkelDef(type).jointSize - 1);
 			boneCnt.setZero(GetSkelDef(type).jointSize - 1);
 			active = 0.f;
+			shapeFixed = false;
 		}
 
 		Eigen::VectorXf boneLen;
 		Eigen::VectorXi boneCnt;
-		float active;
+		float active = 0.f;
+		bool shapeFixed = false;
 		void PushPrevBones(const Eigen::Matrix4Xf& skel);
 	};
 
@@ -76,13 +78,13 @@ private:
 	float m_wBone3d = 1.f;
 	float m_wSquareShape = 1e-3f;
 	int m_shapeMaxIter = 5;
-
+	int m_minTriangulateJCnt = 15;
 	float m_wRegularPose = 1e-4f;
-	float m_wTemporalTrans = 1e-2f;
-	float m_wTemporalPose = 1e-3f;
+	float m_wTemporalTrans = 1e-1f;
+	float m_wTemporalPose = 8e-2f;
 	float m_wJ2d = 1e-5f;
 	float m_wJ3d = 1.f;
-	int m_poseMaxIter = 5;
+	int m_poseMaxIter = 20;
 
 	float m_initActive = 0.9f;
 	float m_activeRate = 0.5f;

@@ -8,7 +8,6 @@ public:
 	KruskalAssociater(const SkelType& type, const std::map<std::string, Camera>& cams);
 	virtual void Associate() override;
 
-	void SetPlaneThetaWelsh(const float& _cPlaneTheta) { m_cPlaneTheta = _cPlaneTheta; }
 	void SetEpiWeight(const float& _wEpi) { m_wEpi = _wEpi; }
 	void SetTempWeight(const float& _wTemp) { m_wTemp = _wTemp; }
 	void SetViewWeight(const float& _wView) { m_wView = _wView; }
@@ -41,7 +40,6 @@ private:
 	std::vector<std::vector<std::vector<Eigen::MatrixXf>>> m_boneEpiEdges;	// m_boneEpiEdges[pafIdx][viewA][viewB](boneAIdx, boneBIdx)
 	std::vector<std::vector<Eigen::MatrixXf>> m_boneTempEdges;				// m_boneTempEdge[pafIdx][view](pIdx, boneIdx)
 	
-	float m_cPlaneTheta = 2e-3f;
 	float m_wEpi = 1.f;
 	float m_wTemp = 3.f;
 	float m_wView = 1.f;

@@ -67,79 +67,92 @@ void SkelFittingUpdater::SkelInfo::PushPrevBones(const Eigen::Matrix4Xf& skel)
 void SkelFittingUpdater::Update(const std::map<int, Eigen::Matrix3Xf>& skels2d, const Eigen::Matrix3Xf& projs)
 {
 	const SkelDef& def = GetSkelDef(m_type);
-	const int prevCnt = int(m_skels.size());
 	// update tracked person
-	auto skelIter = m_skels.begin();
-	auto infoIter = m_skelInfos.begin();
-	int pIdx = 0;
+	const int prevCnt = int(m_skels.size());
+	{auto infoIter = m_skelInfos.begin(); int pIdx = 0;
 	for (auto corrIter = skels2d.begin(); corrIter != skels2d.end(); corrIter++, pIdx++) {
+		const Eigen::Matrix3Xf& skel2dCorr = corrIter->second;
 		if (pIdx < prevCnt) {
 			SkelInfo& info = infoIter->second;
+			Eigen::Matrix4Xf& skel = m_skels.find(infoIter->first)->second;
 			const float active = std::min(info.active + m_activeRate * (2.f * MathUtil::Welsch(
 				float(m_minTrackJCnt), float((corrIter->second.row(2).array() > FLT_EPSILON).count())) - 1.f), 1.f);
-			if (active > 0.f) {
-				const Eigen::Matrix4Xf skel = TriangulatePerson(corrIter->second, projs);
-				if (info.boneCnt.minCoeff() < m_boneCapacity) {
-					// align shape
-					info.PushPrevBones(skel);
-					SkelSolver::Term shapeTerm;
-					shapeTerm.bone3dTarget = info.boneLen.transpose().colwise().homogeneous();
-					shapeTerm.wBone3d = m_wBone3d;
-					shapeTerm.wSquareShape = m_wSquareShape;
-					m_solver.SolveShape(shapeTerm, info, m_shapeMaxIter);
-				}
+			if (info.active < FLT_EPSILON) {
+				m_skels.erase(infoIter->first);
+				infoIter = m_skelInfos.erase(infoIter);
+				continue;
+			}
+			else
+				infoIter++;
 
+			if (!info.shapeFixed) {
+				// align shape
+				skel = TriangulatePerson(corrIter->second, projs);
+				if ((skel.row(3).array() > FLT_EPSILON).count() >= m_minTriangulateJCnt) {
+					info.PushPrevBones(skel);
+					if (info.boneCnt.minCoeff() >= m_boneCapacity) {
+						info.PushPrevBones(skel);
+						SkelSolver::Term shapeTerm;
+						shapeTerm.bone3dTarget = info.boneLen.transpose().colwise().homogeneous();
+						shapeTerm.wBone3d = m_wBone3d;
+						shapeTerm.wSquareShape = m_wSquareShape;
+						m_solver.SolveShape(shapeTerm, info, m_shapeMaxIter);
+
+						// align pose
+						SkelSolver::Term poseTerm;
+						poseTerm.j3dTarget = skel;
+						poseTerm.wJ3d = m_wJ3d;
+						poseTerm.wRegularPose = m_wRegularPose;
+						m_solver.AlignRT(poseTerm, info);
+						m_solver.SolvePose(poseTerm, info, m_poseMaxIter);
+						skel.topRows(3) = m_solver.CalcJFinal(info);
+						info.shapeFixed = true;
+					}
+				}
+			}
+			else {
 				// align pose
 				SkelSolver::Term poseTerm;
 				poseTerm.wJ2d = m_wJ2d;
 				poseTerm.projs = projs;
 				poseTerm.j2dTarget = corrIter->second;
+
+				// filter single view correspondence
+				Eigen::VectorXi corrCnt = Eigen::VectorXi::Zero(def.jointSize);
+				Eigen::VectorXf jConfidence = Eigen::VectorXf::Ones(def.jointSize);
+				for (int view = 0; view < projs.cols() / 4; view++)
+					corrCnt += ((poseTerm.j2dTarget.middleCols(view * def.jointSize, def.jointSize).row(2).transpose().array() > FLT_EPSILON).matrix().cast<int>());
+
+				for (int jIdx = 0; jIdx < def.jointSize; jIdx++) {
+					if (corrCnt[jIdx] <= 1) {
+						jConfidence[jIdx] = FLT_EPSILON;
+						for (int view = 0; view < projs.cols() / 4; view++)
+							poseTerm.j2dTarget.col(view * def.jointSize + jIdx).setZero();
+					}
+				}
+
 				poseTerm.wRegularPose = m_wRegularPose;
 				poseTerm.paramPrev = info;
 				poseTerm.wTemporalTrans = m_wTemporalTrans;
 				poseTerm.wTemporalPose = m_wTemporalPose;
-				m_solver.SolvePose(poseTerm, info, m_poseMaxIter, true);
-				skelIter->second.topRows(3) = m_solver.CalcJFinal(info);
+				m_solver.SolvePose(poseTerm, info, m_poseMaxIter);
+				skel.topRows(3) = m_solver.CalcJFinal(info);
+				skel.row(3) = jConfidence.transpose();
 
 				// update active
 				info.active = active;
-				skelIter++;
-				infoIter++;
-			}
-			else {
-				skelIter = m_skels.erase(skelIter);
-				infoIter = m_skelInfos.erase(infoIter);
 			}
 		}
 		else {
 			Eigen::Matrix4Xf skel = TriangulatePerson(corrIter->second, projs);
 			// alloc new person
-			if (skel.row(3).minCoeff() > FLT_EPSILON) {
-				SkelInfo info(m_type);
-
-				// align shape
+			if ((skel.row(3).array() > FLT_EPSILON).count() >= m_minTriangulateJCnt) {
+				SkelInfo& info = m_skelInfos.insert(std::make_pair(corrIter->first, SkelInfo(m_type))).first->second;
 				info.PushPrevBones(skel);
-				SkelSolver::Term shapeTerm;
-				shapeTerm.wBone3d = m_wBone3d;
-				shapeTerm.bone3dTarget = info.boneLen.transpose().colwise().homogeneous();
-				shapeTerm.wSquareShape = m_wSquareShape;
-				m_solver.SolveShape(shapeTerm, info, m_shapeMaxIter);
-
-				// align pose
-				SkelSolver::Term poseTerm;
-				poseTerm.wJ3d = m_wJ3d;
-				poseTerm.j3dTarget = skel;
-				poseTerm.wRegularPose = m_wRegularPose;
-				m_solver.SolvePose(poseTerm, info, m_poseMaxIter, true);
-				
-				skel.topRows(3) = m_solver.CalcJFinal(info);
 				info.active = m_initActive;
-				skel.row(3).setConstant(info.active);
-
 				m_skels.insert(std::make_pair(corrIter->first, skel));
-				m_skelInfos.insert(std::make_pair(corrIter->first, info));
 			}
 		}
-	}
+	}}
 }
 
